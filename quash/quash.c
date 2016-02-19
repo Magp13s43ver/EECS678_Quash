@@ -11,6 +11,8 @@
                    // this file's header's #include statements are self
                    // contained.
 
+#include <unistd.h>
+
 #include <string.h>
 
 /**************************************************************************
@@ -45,6 +47,7 @@ bool is_running() {
 
 void terminate() {
   running = false;
+  printf("Bye!\n");
 }
 
 void set(char* Test){
@@ -53,6 +56,14 @@ void set(char* Test){
 
 void echo(char* Test){
 	printf("%s\n", Test);
+}
+
+void cd(){
+
+}
+
+void pwd(){
+
 }
 
 bool get_command(command_t* cmd, FILE* in) {
