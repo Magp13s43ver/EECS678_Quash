@@ -8,7 +8,7 @@
  * Included Files
  **************************************************************************/ 
 #include "quash.h" // Putting this above the other includes allows us to ensure
-                   // this file's headder's #include statements are self
+                   // this file's header's #include statements are self
                    // contained.
 
 #include <string.h>
@@ -23,6 +23,8 @@
 // compilation unit (this file and all files that include it). This is similar
 // to private in other languages.
 static bool running;
+char PATH [] = "/usr/bin";
+char HOME [] = "~/home";
 
 /**************************************************************************
  * Private Functions 
@@ -43,6 +45,14 @@ bool is_running() {
 
 void terminate() {
   running = false;
+}
+
+void set(char* Test){
+
+}
+
+void echo(char* Test){
+	printf("%s\n", Test);
 }
 
 bool get_command(command_t* cmd, FILE* in) {
