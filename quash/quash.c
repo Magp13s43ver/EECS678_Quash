@@ -26,8 +26,9 @@
 // compilation unit (this file and all files that include it). This is similar
 // to private in other languages.
 static bool running;
-char PATH [] = "/usr/bin";
-char HOME [] = "~/home";
+char *pPath, *hHome;
+pPath = getenv("PATH");
+hHome = getenv("HOME");
 
 /**************************************************************************
  * Private Functions 
@@ -35,7 +36,8 @@ char HOME [] = "~/home";
 /**
  * Start the main loop by setting the running flag to true
  */
-static void start() {
+static void start() {	
+	
   running = true;
 }
 
@@ -99,6 +101,8 @@ int main(int argc, char** argv) {
   start();
   
   puts("Welcome to Quash!");
+  printf("$PATH is: %s\n", pPath);
+  printf("$HOME is: %s\n", hHome);
   puts("Type \"exit\" to quit");
 
   // Main execution loop
@@ -110,7 +114,7 @@ int main(int argc, char** argv) {
     if (!strcmp(cmd.cmdstr, "exit"))
       terminate(); // Exit Quash
     else 
-      puts(cmd.cmdstr); // Echo the input string
+     printf("Test.");
   }
 
   return EXIT_SUCCESS;
