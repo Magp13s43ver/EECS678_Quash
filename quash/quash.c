@@ -69,7 +69,7 @@ void pwd(){
 
 }
 
-bool get_command(command_t* cmd, FILE* in) {
+bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and returns the command.
   if (fgets(cmd->cmdstr, MAX_COMMAND_LENGTH, in) != NULL) {
     size_t len = strlen(cmd->cmdstr);
     char last_char = cmd->cmdstr[len - 1];
@@ -111,11 +111,25 @@ int main(int argc, char** argv) {
     // this while loop. It is just an example.
 
     // The commands should be parsed, then executed.
-    if (!strcmp(cmd.cmdstr, "exit"))
+    if ((!strcmp(cmd.cmdstr, "exit")) ||(!strcmp(cmd.cmdstr, "quit")))//if the command is "exit"
+    {
       terminate(); // Exit Quash
-    else 
-     printf("Test.");
-  }
+    }
+    else
+    {
+      //puts(cmd.cmdstr); // Echo the input string //maybe execute the command.
+      if (!strncmp(cmd.cmdstr, "/",1)){
+        puts("/ detected useing HOME");
 
+
+      }else{
+        puts("/ not detected, useing PATH");
+
+
+      }
+
+    }
+
+  }
   return EXIT_SUCCESS;
 }
