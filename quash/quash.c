@@ -39,7 +39,6 @@ static void start() {
   strcpy(hHome, getenv("HOME"));
 	
 	
-	
   running = true;
 }
 
@@ -120,15 +119,23 @@ int main(int argc, char** argv) {
     else
     {
       //puts(cmd.cmdstr); // Echo the input string //maybe execute the command.
-      if (!strncmp(cmd.cmdstr, "/",1)){
-        puts("/ detected useing HOME");
+      char ncmd[1024];
 
+      if (!strncmp(cmd.cmdstr, "/",1)){
+        puts("/ detected using HOME");
+        strcpy(ncmd,hHome);
+        strcat(ncmd,cmd.cmdstr);
+        puts(ncmd);//newcmd now contains the directory in command.
+        
 
       }else{
-        puts("/ not detected, useing PATH");
-
+        puts("/ not detected, using PATH");
+        strcpy(ncmd,pPath);//need to change... to try each one
+        strcat(ncmd,cmd.cmdstr);
+        puts(ncmd);
 
       }
+
 
     }
 
