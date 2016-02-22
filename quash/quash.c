@@ -26,9 +26,7 @@
 // compilation unit (this file and all files that include it). This is similar
 // to private in other languages.
 static bool running;
-char *pPath, *hHome;
-pPath = getenv("PATH");
-hHome = getenv("HOME");
+char pPath[1024], hHome[1024];
 
 /**************************************************************************
  * Private Functions 
@@ -37,6 +35,10 @@ hHome = getenv("HOME");
  * Start the main loop by setting the running flag to true
  */
 static void start() {	
+  strcpy(pPath, getenv("PATH"));
+  strcpy(hHome, getenv("HOME"));
+	
+	
 	
   running = true;
 }
