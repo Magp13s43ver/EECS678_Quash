@@ -54,20 +54,47 @@ void terminate() {
   printf("Bye!\n");
 }
 
-void set(char* Test){
+void set(){
 
 }
 
-void echo(char* Test){
-	printf("%s\n", Test);
+void echo(char *string){
+	if (strcmp(string, "$HOME") == 0){
+		puts(hHome);
+	}	
+	else if (strcmp(string, "$PATH") == 0){
+		puts(pPath);
+	}	
+	else{
+		puts(string);
+	}
+	
+	return;
 }
 
-void cd(){
-
+void cd(char *dir){
+	int ret = 0;
+	
+	if (dir == NULL){
+		ret = chdir(hHome);	
+	}
+	else{
+		ret = chdir(dir);
+	}
+	
+	if (ret == -1){
+		puts("Error, no such directory.");	
+	}
+	
+	return;
 }
 
 void pwd(){
-
+	char *currentDir = getcwd(NULL, 0);
+	puts(&currentDir);
+	free(currentDir);
+	
+	return;
 }
 
 bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and returns the command.
