@@ -10,7 +10,7 @@
 #include "quash.h" // Putting this above the other includes allows us to ensure
                    // this file's header's #include statements are self
                    // contained.
-
+#include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,11 +122,14 @@ int main(int argc, char** argv) {
       char ncmd[1024];
 
       if (!strncmp(cmd.cmdstr, "/",1)){
-        puts("/ detected using HOME");
+        //puts("/ detected using HOME");
         strcpy(ncmd,hHome);
-        strcat(ncmd,cmd.cmdstr);
-        puts(ncmd);//newcmd now contains the directory in command.
-        
+        strcat(ncmd,strtok(cmd.cmdstr," "));
+        //puts(ncmd);//newcmd now contains the directory in command.
+        if(execl(ncmd,ncmd,strtok(NULL," "),strtok(NULL," "),strtok(NULL," "),strtok(NULL," ")) <0){
+          fprintf(stderr, "\nError. ERROR # %d\n", errno);
+
+        }
 
       }else{
         puts("/ not detected, using PATH");
