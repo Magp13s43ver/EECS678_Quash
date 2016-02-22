@@ -72,6 +72,7 @@ void echo(char *string){
 	return;
 }
 
+
 void cd(char *dir){
 	int ret = 0;
 	
@@ -91,7 +92,7 @@ void cd(char *dir){
 
 void pwd(){
 	char *currentDir = getcwd(NULL, 0);
-	puts(&currentDir);
+	puts(currentDir);
 	free(currentDir);
 	
 	return;
