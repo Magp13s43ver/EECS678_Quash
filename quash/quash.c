@@ -65,28 +65,32 @@ void set(char *envVar){
   token = strtok(envVar, "=");
 
   if (strcmp(token, "PATH") == 0){
-
+    strcpy(pPath, strtok(NULL, ""));
   }
   else if (strcmp(token, "HOME") == 0){
-
+    strcpy(hHome, strtok(NULL, ""));  
   }
   else{
-    printf("Error. No such variable.");
+    puts("Error. No such variable.");
   }
 
   return;
 }
 
 void echo(char *string){
-	if (strcmp(string, "$HOME") == 0){
+  //If empty string, just print a new line.
+	if(string == NULL){
+    printf("\n");
+  }
+  else if (strcmp(string, "$HOME") == 0){
 		puts(hHome);
 	}	
 	else if (strcmp(string, "$PATH") == 0){
 		puts(pPath);
 	}	
-	else{
-		puts(string);
-	}
+  else{
+    puts(string);
+  }
 	
 	return;
 }
@@ -95,7 +99,7 @@ void echo(char *string){
 void cd(char *dir){
 	int ret = 0;
 	
-	if (dir == NULL){
+	if (dir == NULL || dir[0] == '~'){
 		ret = chdir(hHome);	
 	}
 	else{
@@ -239,6 +243,11 @@ int main(int argc, char** argv) {
         
     // NOTE: I would not recommend keeping anything inside the body of
     // this while loop. It is just an example.
+ 
+    //If not receiving any command from user, skip iteration to prevent segmentation fault.
+    if (strlen(tmpCmd) == 0){
+      continue;
+    }
 
     // The commands should be parsed, then executed.
     if ((!strcmp(tmpCmd, "exit")) ||(!strcmp(tmpCmd, "quit")))//if the command is "exit"
@@ -253,6 +262,12 @@ int main(int argc, char** argv) {
     }
     else if(strcmp(tok, "pwd") == 0){
       pwd();
+    }
+    else if(strcmp(tok, "set") == 0){
+      set(strtok(NULL, ""));
+    }
+    else if(strcmp(tok, "") == 0){
+      puts("No command found.");
     }
     else 
     {
