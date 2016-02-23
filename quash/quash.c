@@ -54,8 +54,23 @@ void terminate() {
   printf("Bye!\n");
 }
 
-void set(){
+void set(char *envVar){
+  char *token;
 
+  /* get the first token */
+  token = strtok(envVar, "=");
+
+  if (strcmp(token, "PATH") == 0){
+
+  }
+  else if (strcmp(token, "HOME") == 0){
+
+  }
+  else{
+    printf("Error. No such variable.");
+  }
+
+  return;
 }
 
 void echo(char *string){
@@ -127,6 +142,9 @@ bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and 
 int main(int argc, char** argv) { 
   command_t cmd; //< Command holder argument
   
+  char tmpCmd[1024];
+  memset(tmpCmd, 0, 1024);
+
   start();
   
   puts("Welcome to Quash!");
@@ -136,15 +154,31 @@ int main(int argc, char** argv) {
 
   // Main execution loop
   while (is_running() && get_command(&cmd, stdin)) {
+    //Copy the command string to a temporary variable.
+    strcpy(tmpCmd, cmd.cmdstr);
+
+    //Split tmpCmd to get the command 
+    char *tok;
+    tok = strtok(tmpCmd, " ");
+        
     // NOTE: I would not recommend keeping anything inside the body of
     // this while loop. It is just an example.
 
     // The commands should be parsed, then executed.
-    if ((!strcmp(cmd.cmdstr, "exit")) ||(!strcmp(cmd.cmdstr, "quit")))//if the command is "exit"
+    if ((!strcmp(tmpCmd, "exit")) ||(!strcmp(tmpCmd, "quit")))//if the command is "exit"
     {
       terminate(); // Exit Quash
     }
-    else
+    else if(strcmp(tok, "echo") == 0){
+      echo(strtok(NULL, ""));
+    }
+    else if(strcmp(tok, "cd") == 0){
+      cd(strtok(NULL, ""));
+    }
+    else if(strcmp(tok, "pwd") == 0){
+      pwd();
+    }
+    else 
     {
       //puts(cmd.cmdstr); // Echo the input string //maybe execute the command.
       char ncmd[1024];
@@ -164,6 +198,7 @@ int main(int argc, char** argv) {
         strcpy(ncmd,pPath);//need to change... to try each one
         strcat(ncmd,cmd.cmdstr);
         puts(ncmd);
+
 
       }
 
