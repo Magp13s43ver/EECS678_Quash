@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 /**************************************************************************
  * Private Variables
@@ -34,7 +36,9 @@ char pPath[1024], hHome[1024];
 /**
  * Start the main loop by setting the running flag to true
  */
-static void start() {	
+static void start() {
+  memset(pPath,0,1024);
+  memset(hHome,0,1024);
   strcpy(pPath, getenv("PATH"));
   strcpy(hHome, getenv("HOME"));
 	
@@ -113,7 +117,78 @@ void pwd(){
 	return;
 }
 
+void genCmd(command_t* cmd){
+  int status;
+  pid_t pid_1;
+
+  pid_1 = fork();
+  if (pid_1 == 0) { //if child
+
+    int pathNum;// number in the path
+    //puts(cmd.cmdstr); // Echo the input string //maybe execute the command.
+    char ncmd[1024];
+    memset(ncmd,0,1024);
+    if (!strncmp(cmd->cmdstr, "/",1)){
+      //puts("/ detected using HOME");
+      strcpy(ncmd,hHome);
+      strcat(ncmd,strtok(cmd->cmdstr," "));
+      //puts(ncmd);//newcmd now contains the directory in command.
+      if(execl(ncmd,ncmd,strtok(NULL," "),strtok(NULL," "),strtok(NULL," "),strtok(NULL," ")) <0){
+        fprintf(stderr, "\nError. ERROR # %d\n", errno);
+
+      }
+
+    }else{
+      //puts("/ not detected, using PATH");
+      strtok(cmd->cmdstr," ");
+      char* arg[4] = {strtok(NULL," "),strtok(NULL," "),strtok(NULL," "),strtok(NULL," ")};
+      strcpy(ncmd,strtok(pPath,":"));//copy first part of path to newcmd
+      pathNum = 1;
+      
+      bool executed = false;
+      while((strncmp(ncmd,"\0",1) != 0) && (executed == false)){ //while the path is not null, and not executed
+        strcat(ncmd,"/");//add "/" between path and command.
+        strcat(ncmd,cmd->cmdstr); //cat on the cmd str
+        
+        if (execl(ncmd,ncmd,arg[0],arg[1],arg[2],arg[3]) < 0){//try the next one //if failed:
+          char *tmp = NULL;
+          for(int i = 0; i<pathNum; i++){
+            tmp = strtok(NULL,":");//go to the next part of the path.
+          }
+          pathNum++;
+
+          if (tmp != NULL){//if not found a null termenator?
+            strcpy(ncmd,tmp);//copy new str to ncmd
+          }else{
+            ncmd[0] = '\0';//else set ncmd first char to null
+          }
+          
+        } else{
+
+          executed = true;
+        }
+      }
+      if (executed == false){
+        puts("Failed to find command.");
+      }
+
+    }
+
+  }else{//parent
+    if ((waitpid(pid_1, &status, 0)) == -1) {
+      fprintf(stderr, "Process 1 encountered an error. ERROR%d", errno);
+      //return EXIT_FAILURE;
+    } 
+
+
+
+
+  }
+
+}
+
 bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and returns the command.
+  memset(cmd->cmdstr,0,1024);
   if (fgets(cmd->cmdstr, MAX_COMMAND_LENGTH, in) != NULL) {
     size_t len = strlen(cmd->cmdstr);
     char last_char = cmd->cmdstr[len - 1];
@@ -155,6 +230,7 @@ int main(int argc, char** argv) {
   // Main execution loop
   while (is_running() && get_command(&cmd, stdin)) {
     //Copy the command string to a temporary variable.
+    memset(tmpCmd, 0, 1024);
     strcpy(tmpCmd, cmd.cmdstr);
 
     //Split tmpCmd to get the command 
@@ -180,28 +256,7 @@ int main(int argc, char** argv) {
     }
     else 
     {
-      //puts(cmd.cmdstr); // Echo the input string //maybe execute the command.
-      char ncmd[1024];
-
-      if (!strncmp(cmd.cmdstr, "/",1)){
-        //puts("/ detected using HOME");
-        strcpy(ncmd,hHome);
-        strcat(ncmd,strtok(cmd.cmdstr," "));
-        //puts(ncmd);//newcmd now contains the directory in command.
-        if(execl(ncmd,ncmd,strtok(NULL," "),strtok(NULL," "),strtok(NULL," "),strtok(NULL," ")) <0){
-          fprintf(stderr, "\nError. ERROR # %d\n", errno);
-
-        }
-
-      }else{
-        puts("/ not detected, using PATH");
-        strcpy(ncmd,pPath);//need to change... to try each one
-        strcat(ncmd,cmd.cmdstr);
-        puts(ncmd);
-
-
-      }
-
+      genCmd(&cmd);
 
     }
 
