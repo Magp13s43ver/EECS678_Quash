@@ -266,9 +266,6 @@ int main(int argc, char** argv) {
     else if(strcmp(tok, "set") == 0){
       set(strtok(NULL, ""));
     }
-    else if(strcmp(tok, "") == 0){
-      puts("No command found.");
-    }
     else 
     {
       genCmd(&cmd);
