@@ -124,14 +124,22 @@ void pwd(){
 void genCmd(command_t* cmd){
   int status;
   pid_t pid_1;
+  int fdtopid1[2];//writing end is 1, reading end is 0 
+  //int fdfrpid1[2];
+
+  pipe(fdtopid1);
+  //pipe(fdfrpid1);
 
   pid_1 = fork();
   if (pid_1 == 0) { //if child
+    close(fdtopid1[1]);//close up unused write
+    dup2(fdtopid1[0],STDIN_FILENO);
 
     int pathNum;// number in the path
     //puts(cmd.cmdstr); // Echo the input string //maybe execute the command.
     char ncmd[1024];
     memset(ncmd,0,1024);
+    
     if (!strncmp(cmd->cmdstr, "/",1)){
       //puts("/ detected using HOME");
       strcpy(ncmd,hHome);
@@ -175,15 +183,30 @@ void genCmd(command_t* cmd){
       if (executed == false){
         puts("Failed to find command.");
       }
-
     }
+  close(fdtopid1[0]);
+  exit(0);
 
-  }else{//parent
-    if ((waitpid(pid_1, &status, 0)) == -1) {
-      fprintf(stderr, "Process 1 encountered an error. ERROR%d", errno);
+  }else{// else parent
+    close(fdtopid1[0]);//close up unused read
+    //int tempdup;
+    //tempdup = dup(STDIN_FILENO);//save stdin?
+    //dup2(fdtopid1[1],STDIN_FILENO);
+
+    while(waitpid(pid_1, &status, WNOHANG) == 0){//wile true, pipe stdin to shild.
+      char ch;
+      if (read(STDIN_FILENO, &ch, 1) > 0){
+        write(fdtopid1[1],&ch,1);
+      }
+    }
+    
+
+    //if ((waitpid(pid_1, &status, 0)) == -1) {
+    //  fprintf(stderr, "Process 1 encountered an error. ERROR%d", errno);
       //return EXIT_FAILURE;
-    } 
-
+    //} 
+    close(fdtopid1[1]);
+    //dup2(tempdup,STDIN_FILENO);//replace stdin.
 
 
 
@@ -196,7 +219,6 @@ bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and 
   if (fgets(cmd->cmdstr, MAX_COMMAND_LENGTH, in) != NULL) {
     size_t len = strlen(cmd->cmdstr);
     char last_char = cmd->cmdstr[len - 1];
-
     if (last_char == '\n' || last_char == '\r') {
       // Remove trailing new line character.
       cmd->cmdstr[len - 1] = '\0';
@@ -245,7 +267,7 @@ int main(int argc, char** argv) {
     // this while loop. It is just an example.
  
     //If not receiving any command from user, skip iteration to prevent segmentation fault.
-    if (strlen(tmpCmd) == 0){
+    if ((strlen(tmpCmd) == 0)||(tok == NULL)){
       continue;
     }
 
