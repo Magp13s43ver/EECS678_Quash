@@ -18,6 +18,8 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 
+
+
 /**************************************************************************
  * Private Variables
  **************************************************************************/
@@ -29,6 +31,7 @@
 // to private in other languages.
 static bool running;
 char pPath[1024], hHome[1024];
+
 
 /**************************************************************************
  * Private Functions 
@@ -189,22 +192,40 @@ void genCmd(command_t* cmd){
 
   }else{// else parent
     close(fdtopid1[0]);//close up unused read
+    cmd->pid = pid_1;
     //int tempdup;
     //tempdup = dup(STDIN_FILENO);//save stdin?
     //dup2(fdtopid1[1],STDIN_FILENO);
+    if(cmd->background == false){
+      //puts("hi!");
+      //while(waitpid(pid_1, &status, WNOHANG) >= 0){//wile true, pipe stdin to shild.
+      //  char ch;
+      //  if (read(STDIN_FILENO, &ch, 1) > 0){
+      //    write(fdtopid1[1],&ch,1);
+      //  }
+      //}
+      //close(fdtopid1[1]);
+      if ((waitpid(pid_1, &status, 0)) == -1) {
+        fprintf(stderr, "Process 1 encountered an error. ERROR%d", errno);
+      return EXIT_FAILURE;
+      } 
 
-    while(waitpid(pid_1, &status, WNOHANG) == 0){//wile true, pipe stdin to shild.
-      char ch;
-      if (read(STDIN_FILENO, &ch, 1) > 0){
-        write(fdtopid1[1],&ch,1);
-      }
+    }else{//background task
+      //save to array of tasks, at int i; 
+      //char tmpCmd[1024];
+      //memset(tmpCmd, 0, 1024);
+      //strcpy(tmpCmd, cmd.cmdstr);
+      //char *tok;
+      //tok = strtok(tmpCmd, " ");
+      int i =0; 
+      printf("[%u] %u ",i,cmd->pid);
+
+
     }
     
 
-    //if ((waitpid(pid_1, &status, 0)) == -1) {
-    //  fprintf(stderr, "Process 1 encountered an error. ERROR%d", errno);
-      //return EXIT_FAILURE;
-    //} 
+
+
     close(fdtopid1[1]);
     //dup2(tempdup,STDIN_FILENO);//replace stdin.
 
@@ -262,13 +283,23 @@ int main(int argc, char** argv) {
     //Split tmpCmd to get the command 
     char *tok;
     tok = strtok(tmpCmd, " ");
-        
+    
     // NOTE: I would not recommend keeping anything inside the body of
     // this while loop. It is just an example.
  
     //If not receiving any command from user, skip iteration to prevent segmentation fault.
     if ((strlen(tmpCmd) == 0)||(tok == NULL)){
       continue;
+    }
+    if(cmd.cmdstr[cmd.cmdlen] == '&'){//is a background process
+      cmd.cmdstr[cmd.cmdlen] = '\0';
+      if(cmd.cmdstr[cmd.cmdlen-1] == ' '){
+        cmd.cmdstr[cmd.cmdlen-1] = '\0';
+      }
+      cmd.background = true;
+
+    }else{
+      cmd.background = false;
     }
 
     // The commands should be parsed, then executed.
@@ -290,10 +321,11 @@ int main(int argc, char** argv) {
     }
     else 
     {
+
       genCmd(&cmd);
 
     }
-
+    //puts("hi");
   }
   return EXIT_SUCCESS;
 }
