@@ -62,6 +62,11 @@ void terminate() {
 }
 
 void set(char *envVar){
+  if ((envVar == NULL) || (*envVar == ' ')){
+    puts("Error. Empty variable.");
+    return;
+  }
+  
   char *token;
 
   /* get the first token */
