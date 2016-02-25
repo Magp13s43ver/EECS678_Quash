@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 /**
  * Specify the maximum number of characters accepted by the command string
@@ -26,7 +27,8 @@ typedef struct command_t {
                                    ///< arbitrarily long strings for
                                    ///< robustness.
   size_t cmdlen;                   ///< length of the cmdstr character buffer
-
+  pid_t pid;
+  bool background;
   // Extend with more fields if needed
 } command_t;
 
