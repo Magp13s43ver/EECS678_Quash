@@ -296,10 +296,10 @@ int main(int argc, char** argv) {
     if ((strlen(tmpCmd) == 0)||(tok == NULL)){
       continue;
     }
-    if(cmd.cmdstr[cmd.cmdlen] == '&'){//is a background process
-      cmd.cmdstr[cmd.cmdlen] = '\0';
-      if(cmd.cmdstr[cmd.cmdlen-1] == ' '){
-        cmd.cmdstr[cmd.cmdlen-1] = '\0';
+    if(cmd.cmdstr[cmd.cmdlen-1] == '&'){//is a background process
+      cmd.cmdstr[cmd.cmdlen-1] = '\0';
+      if(cmd.cmdstr[cmd.cmdlen-2] == ' '){
+        cmd.cmdstr[cmd.cmdlen-2] = '\0';
       }
       cmd.background = true;
 
