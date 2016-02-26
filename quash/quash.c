@@ -66,7 +66,7 @@ void set(char *envVar){
     puts("Error. Empty variable.");
     return;
   }
-  
+
   char *token;
 
   /* get the first token */
@@ -129,6 +129,10 @@ void pwd(){
 	return;
 }
 
+void job(){
+  
+}
+
 void catch_sigchld(int sig_num){
   int status;
   for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
@@ -188,7 +192,7 @@ void genCmd(command_t* cmd){
       while((strncmp(ncmd,"\0",1) != 0) && (executed == false)){ //while the path is not null, and not executed
         strcat(ncmd,"/");//add "/" between path and command.
         strcat(ncmd,cmd->cmdstr); //cat on the cmd str
-        
+
         if (execl(ncmd,ncmd,arg[0],arg[1],arg[2],arg[3]) < 0){//try the next one //if failed:
           char *tmp = NULL;
           for(int i = 0; i<pathNum; i++){
@@ -200,10 +204,8 @@ void genCmd(command_t* cmd){
             strcpy(ncmd,tmp);//copy new str to ncmd
           }else{
             ncmd[0] = '\0';//else set ncmd first char to null
-          }
-          
+          }         
         } else{
-
           executed = true;
         }
       }
