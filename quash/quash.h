@@ -16,6 +16,7 @@
  * Specify the maximum number of characters accepted by the command string
  */
 #define MAX_COMMAND_LENGTH (1024)
+#define MAX_BACKGROUND_TASKS (12)
 
 /**
  * Holds information about a command.

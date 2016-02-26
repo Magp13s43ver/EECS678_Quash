@@ -10,6 +10,7 @@
 #include "quash.h" // Putting this above the other includes allows us to ensure
                    // this file's header's #include statements are self
                    // contained.
+#include <signal.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -17,7 +18,6 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-
 
 
 /**************************************************************************
@@ -31,7 +31,7 @@
 // to private in other languages.
 static bool running;
 char pPath[1024], hHome[1024];
-
+command_t backprocess[MAX_BACKGROUND_TASKS];
 
 /**************************************************************************
  * Private Functions 
@@ -129,6 +129,25 @@ void pwd(){
 	return;
 }
 
+void catch_sigchld(int sig_num){
+  int status;
+  for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
+    if(backprocess[n].pid != 0){
+      pid_t ret = waitpid(backprocess[n].pid, &status, WNOHANG);
+      if (ret == 0){//child is sill alive dont do anything
+      }else if(ret == -1){//child had an error
+        fprintf(stderr, "[%u] %u %s encountered an error. ERROR%d\n",n+1,backprocess[n].pid,backprocess[n].cmdstr,errno);
+        backprocess[n].pid = 0;
+        break;
+      }else{//child exited
+        fprintf(stderr, "[%u] %u finished %s\n",n+1,backprocess[n].pid,backprocess[n].cmdstr);
+        backprocess[n].pid = 0;
+        break;
+      }
+    }
+  }
+}
+
 void genCmd(command_t* cmd){
   int status;
   pid_t pid_1;
@@ -216,15 +235,19 @@ void genCmd(command_t* cmd){
       } 
 
     }else{//background task
+      for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
+        if(backprocess[n].pid == 0){
+          memcpy(&backprocess[n],cmd,sizeof(command_t));
+          printf("[%u] %u\n",n+1,cmd->pid);
+          break;
+        }
+      }     
       //save to array of tasks, at int i; 
       //char tmpCmd[1024];
       //memset(tmpCmd, 0, 1024);
       //strcpy(tmpCmd, cmd.cmdstr);
       //char *tok;
       //tok = strtok(tmpCmd, " ");
-      int i =0; 
-      printf("[%u] %u ",i,cmd->pid);
-
 
     }
     
@@ -271,6 +294,16 @@ int main(int argc, char** argv) {
   
   char tmpCmd[1024];
   memset(tmpCmd, 0, 1024);
+
+  memset(backprocess,0,sizeof(command_t)*MAX_BACKGROUND_TASKS);
+
+  struct sigaction sa;
+  sigset_t mask_set;  /* used to set a signal masking set. */
+  /* setup mask_set */
+  sigfillset(&mask_set);//prevent other interupts from interupting intrupts
+  sa.sa_mask = mask_set;
+  sa.sa_handler = catch_sigchld;
+  sigaction(SIGCHLD,&sa,NULL);
 
   start();
   
