@@ -236,9 +236,12 @@ void genCmd(command_t* cmd){
       //  }
       //}
       //close(fdtopid1[1]);
-      	if ((waitpid(pid_1, &status, 0)) == -1) {
-          fprintf(stderr, "Process 1 encountered an error. ERROR%d", errno);
+
+      if ((waitpid(pid_1, &status, 0)) == -1) {
+        if(errno != 10){
+          fprintf(stderr, "Process %s encountered an error. ERROR %d\n", cmd->cmdstr,errno);
           return EXIT_FAILURE;
+        }
       } 
 
     }else{//background task
