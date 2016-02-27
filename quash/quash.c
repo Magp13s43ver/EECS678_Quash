@@ -157,19 +157,25 @@ void catch_sigchld(int sig_num){
   }
 }
 
-void genCmd(command_t* cmd){
+void genCmd(command_t* cmd,int fdread,int fdwrite){
   int status;
   pid_t pid_1;
   int fdtopid1[2];//writing end is 1, reading end is 0 
   //int fdfrpid1[2];
 
-  pipe(fdtopid1);
+
   //pipe(fdfrpid1);
 
   pid_1 = fork();
   if (pid_1 == 0) { //if child
-    close(fdtopid1[1]);//close up unused write
-    dup2(fdtopid1[0],STDIN_FILENO);
+    if(fdread != -1){
+      dup2(fdread,STDIN_FILENO);
+    }
+    if(fdwrite != -1){
+      dup2(fdwrite,STDOUT_FILENO);
+    }
+    //close(fdtopid1[1]);//close up unused write
+    //dup2(fdtopid1[0],STDIN_FILENO);
 
     int pathNum;// number in the path
     //puts(cmd.cmdstr); // Echo the input string //maybe execute the command.
@@ -218,11 +224,11 @@ void genCmd(command_t* cmd){
         puts("Failed to find command.");
       }
     }
-  close(fdtopid1[0]);
+  //close(fdtopid1[0]);
   exit(0);
 
   }else{// else parent
-    close(fdtopid1[0]);//close up unused read
+    //close(fdtopid1[0]);//close up unused read
     cmd->pid = pid_1;
     //int tempdup;
     //tempdup = dup(STDIN_FILENO);//save stdin?
@@ -240,7 +246,7 @@ void genCmd(command_t* cmd){
       if ((waitpid(pid_1, &status, 0)) == -1) {
         if(errno != 10){
           fprintf(stderr, "Process %s encountered an error. ERROR %d\n", cmd->cmdstr,errno);
-          return EXIT_FAILURE;
+          //return EXIT_FAILURE;
         }
       } 
 
@@ -264,7 +270,7 @@ void genCmd(command_t* cmd){
 
 
 
-    close(fdtopid1[1]);
+    //close(fdtopid1[1]);
     //dup2(tempdup,STDIN_FILENO);//replace stdin.
 
 
@@ -288,8 +294,10 @@ bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and 
     
     return true;
   }
-  else
+  else{
+    perror ("The following error occurred");
     return false;
+  }
 }
 
 /**
@@ -310,7 +318,8 @@ int main(int argc, char** argv) {
   struct sigaction sa;
   sigset_t mask_set;  /* used to set a signal masking set. */
   /* setup mask_set */
-  sigfillset(&mask_set);//prevent other interupts from interupting intrupts
+  sigemptyset(&mask_set);
+  //sigfillset(&mask_set);//prevent other interupts from interupting intrupts
   sa.sa_mask = mask_set;
   sa.sa_handler = catch_sigchld;
   sigaction(SIGCHLD,&sa,NULL);
@@ -372,9 +381,38 @@ int main(int argc, char** argv) {
     }
     else 
     {
+      memset(tmpCmd, 0, 1024);
+      strcpy(tmpCmd, cmd.cmdstr);
+      FILE *infileptr = NULL;
+      FILE *outfileptr = NULL;
+      int infiledsc = -1;
+      int outfiledsc = -1;
+      if(strchr(tmpCmd,'<') != NULL){
+        char *tmp = strchr(tmpCmd,'<')+1;
+        if(strncmp(tmp," ",1)==0)//if space, move ahead by one.
+          tmp++;
+        strtok(tmp, " ");//find next space or end of string. and put \0
+        infileptr = fopen(tmp,"r");
+        infiledsc = fileno(infileptr);
+      }
+      strcpy(tmpCmd, cmd.cmdstr);
+      if(strchr(tmpCmd,'>') != NULL){
+        char *tmp = strchr(tmpCmd,'>')+1;
+        if(strncmp(tmp," ",1)==0)//if space, move ahead by one.
+          tmp++;
+        strtok(tmp, " ");//find next space or end of string. and put \0
 
-      genCmd(&cmd);
-
+        outfileptr = fopen(tmp,"w+");
+        outfiledsc = fileno(outfileptr);
+      }
+      strtok(cmd.cmdstr, "<>");//add \0 to begining of <> segment to designate end of string.
+      cmd.cmdlen = strlen(cmd.cmdstr);
+      genCmd(&cmd,infiledsc,outfiledsc);
+      
+      if(infileptr != NULL)
+        fclose(infileptr);
+      if(outfileptr != NULL)
+        fclose(outfileptr);
     }
     //puts("hi");
   }
