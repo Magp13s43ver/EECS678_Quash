@@ -144,8 +144,8 @@ void catch_sigchld(int sig_num){
     if(backprocess[n].pid != 0){
       pid_t ret = waitpid(backprocess[n].pid, &status, WNOHANG);
       if (ret == 0){//child is sill alive dont do anything
-      }else if(ret == -1){//child had an error
-        fprintf(stderr, "[%u] %u %s encountered an error. ERROR%d\n",n+1,backprocess[n].pid,backprocess[n].cmdstr,errno);
+      }else if(ret == -1 && errno != 10){//child had an error or child does not exist any more.
+        fprintf(stderr, "[%u] %u %s encountered an error. ERROR %d\n",n+1,backprocess[n].pid,backprocess[n].cmdstr,errno);
         backprocess[n].pid = 0;
         break;
       }else{//child exited
