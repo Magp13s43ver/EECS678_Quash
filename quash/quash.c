@@ -129,8 +129,13 @@ void pwd(){
 	return;
 }
 
-void job(){
-  
+void jobs(){
+  for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
+    if(backprocess[n].pid != 0){
+      printf("[%u] %u %s\n", n+1, backprocess[n].pid, backprocess[n].cmdstr);
+    }
+  }
+  return;
 }
 
 void catch_sigchld(int sig_num){
@@ -231,9 +236,9 @@ void genCmd(command_t* cmd){
       //  }
       //}
       //close(fdtopid1[1]);
-      if ((waitpid(pid_1, &status, 0)) == -1) {
-        fprintf(stderr, "Process 1 encountered an error. ERROR%d", errno);
-      return EXIT_FAILURE;
+      	if ((waitpid(pid_1, &status, 0)) == -1) {
+          fprintf(stderr, "Process 1 encountered an error. ERROR%d", errno);
+          return EXIT_FAILURE;
       } 
 
     }else{//background task
@@ -358,6 +363,9 @@ int main(int argc, char** argv) {
     }
     else if(strcmp(tok, "set") == 0){
       set(strtok(NULL, ""));
+    }
+    else if(strcmp(tok, "jobs") == 0){
+      jobs();
     }
     else 
     {
