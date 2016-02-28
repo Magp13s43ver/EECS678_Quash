@@ -63,6 +63,11 @@ void terminate() {
   printf("Bye!\n");
 }
 
+/**
+ * This function allows the user to set the environment variable.
+ * @param envVar environment string to be set
+ * @return none
+ */
 void set(char *envVar){
   if ((envVar == NULL) || (*envVar == ' ')){
     puts("Error. Empty variable.");
@@ -87,6 +92,11 @@ void set(char *envVar){
   return;
 }
 
+/**
+ * This function prints the string passed to it.
+ * @param string string to be printed out.
+ * @return none
+ */
 void echo(char *string){
   //If empty string, just print a new line.
 	if(string == NULL){
@@ -105,7 +115,11 @@ void echo(char *string){
 	return;
 }
 
-
+/**
+ * This function allows the user to change directory.
+ * @param dir string to cd into.
+ * @return none
+ */
 void cd(char *dir){
 	int ret = 0;
 	
@@ -123,6 +137,10 @@ void cd(char *dir){
 	return;
 }
 
+/**
+ * This function prints the current working directory.
+ * @return none
+ */
 void pwd(){
 	char *currentDir = getcwd(NULL, 0);
 	puts(currentDir);
@@ -131,6 +149,10 @@ void pwd(){
 	return;
 }
 
+/**
+ * This function prints the current jobs.
+ * @return none
+ */
 void jobs(){
   for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
     if(backprocess[n].pid != 0){
@@ -140,6 +162,12 @@ void jobs(){
   return;
 }
 
+/**
+ * This function sends a signal to a process based on its Job ID
+ * @param sigNum integer value of the signal to be sent
+ * @param jobID integer value of the Job ID
+ * @return none
+ */
 void killBack(int sigNum, int jobID){
   if (sigNum == 0 || jobID == 0){
     puts("Invalid command.");
@@ -159,6 +187,11 @@ void killBack(int sigNum, int jobID){
   }
 }
 
+/**
+ * This function catches the signal and notifies the parent when a child process exits.
+ * @param sig_num integer value of signal to catch
+ * @return none
+ */
 void catch_sigchld(int sig_num){
   int status;
   for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
