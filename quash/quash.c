@@ -141,7 +141,6 @@ void jobs(){
 }
 
 void killBack(int sigNum, int jobID){
-  printf("sigNum: %u, jobID: %u/n", sigNum, jobID);
   if (sigNum == 0 || jobID == 0){
     puts("Invalid command.");
     return;
@@ -149,13 +148,13 @@ void killBack(int sigNum, int jobID){
   else{
     pid_t pidKill = 0;
     for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
-      printf("n: %u, pid: %u\n", n, backprocess[n].pid);
       if((jobID-1 == n) && (backprocess[n].pid != 0)){
         pidKill = backprocess[n].pid;
         kill(pidKill, sigNum);
-        break;
+        return;
       }
     }
+    printf("No Job ID: [%u] to kill.\n", jobID);
     return;
   }
 }
