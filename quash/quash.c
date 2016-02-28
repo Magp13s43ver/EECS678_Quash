@@ -54,10 +54,18 @@ static void start() {
 /**************************************************************************
  * Public Functions 
  **************************************************************************/
+/**
+ * This function checks if the program is running or not.
+ * @return boolean value of running
+ */
 bool is_running() {
   return running;
 }
 
+/**
+ * This function terminates the program.
+ * @return none
+ */
 void terminate() {
   running = false;
   printf("Bye!\n");
@@ -211,6 +219,13 @@ void catch_sigchld(int sig_num){
   }
 }
 
+/**
+ * This function parses the input and generates the command to be executed.
+ * @param cmd command struct parsed
+ * @param fdread integer value of the read file descriptor
+ * @param fdwrite integer value of the write file descriptor
+ * @return none
+ */
 void genCmdSimple(command_t* cmd,int fdread,int fdwrite){
   int status;
   pid_t pid_1;
@@ -289,6 +304,14 @@ void genCmdSimple(command_t* cmd,int fdread,int fdwrite){
   }
 }
 
+
+/**
+ * This function parses the input and generates the command to be executed.
+ * @param cmd command struct parsed
+ * @param fdread integer value of the read file descriptor
+ * @param fdwrite integer value of the write file descriptor
+ * @return none
+ */
 void genCmd(command_t* cmd,int fdread,int fdwrite){
   int status;
   pid_t pid_1;
@@ -486,9 +509,6 @@ int main(int argc, char** argv) {
     char *tok;
     tok = strtok(tmpCmd, " ");
     
-    // NOTE: I would not recommend keeping anything inside the body of
-    // this while loop. It is just an example.
- 
     //If not receiving any command from user, skip iteration to prevent segmentation fault.
     if ((strlen(tmpCmd) == 0)||(tok == NULL)){
       continue;
