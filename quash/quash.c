@@ -140,6 +140,26 @@ void jobs(){
   return;
 }
 
+void killBack(int sigNum, int jobID){
+  printf("sigNum: %u, jobID: %u/n", sigNum, jobID);
+  if (sigNum == 0 || jobID == 0){
+    puts("Invalid command.");
+    return;
+  }
+  else{
+    pid_t pidKill = 0;
+    for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
+      printf("n: %u, pid: %u\n", n, backprocess[n].pid);
+      if((jobID-1 == n) && (backprocess[n].pid != 0)){
+        pidKill = backprocess[n].pid;
+        kill(pidKill, sigNum);
+        break;
+      }
+    }
+    return;
+  }
+}
+
 void catch_sigchld(int sig_num){
   int status;
   for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
@@ -297,7 +317,6 @@ void genCmd(command_t* cmd,int fdread,int fdwrite){
 
 
   }
-
 }
 
 bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and returns the command.
@@ -346,7 +365,7 @@ int main(int argc, char** argv) {
   struct sigaction sa;
   sigset_t mask_set;  /* used to set a signal masking set. */
   /* setup mask_set */
-  //sigemptyset(&mask_set);
+  sigemptyset(&mask_set);
   sigfillset(&mask_set);//prevent other interupts from interupting intrupts
   sa.sa_mask = mask_set;
   sa.sa_handler = catch_sigchld;
@@ -408,6 +427,21 @@ int main(int argc, char** argv) {
     else if(strcmp(tok, "jobs") == 0){
       jobs();
     }
+    else if(strcmp(tok, "kill") == 0){
+      char *sigNum = strtok(NULL, " ");
+      char *jobID = strtok(NULL, " ");
+      
+      if (sigNum == NULL || jobID == NULL){
+          printf("Error. Invalid number of arguments.\n");
+          continue;
+      }
+      else{
+          int intSigNum = atoi(sigNum);
+          int intjobID = atoi(jobID);
+   
+          killBack(intSigNum, intjobID);
+      }
+    }
     else 
     {
       memset(tmpCmd, 0, 1024);
@@ -441,6 +475,7 @@ int main(int argc, char** argv) {
       }
       strtok(cmd.cmdstr, "<>");//add \0 to begining of <> segment to designate end of string.
       cmd.cmdlen = strlen(cmd.cmdstr);
+      
       genCmd(&cmd,infiledsc,outfiledsc);
       
       if(infileptr != NULL)
