@@ -211,16 +211,98 @@ void catch_sigchld(int sig_num){
   }
 }
 
+void genCmdSimple(command_t* cmd,int fdread,int fdwrite){
+  int status;
+  pid_t pid_1;
+
+  pid_1 = fork();
+
+  if (pid_1 == 0) { //if child
+
+      if(fdread != -1){
+        dup2(fdread,STDIN_FILENO);
+      }
+      if(fdwrite != -1){
+        dup2(fdwrite,STDOUT_FILENO);
+      }
+
+    int pathNum;// number in the path
+    char ncmd[1024];
+    memset(ncmd,0,1024);
+    
+    if (!strncmp(cmd->cmdstr, "/",1)){
+      strcpy(ncmd,hHome);
+      strcat(ncmd,strtok(cmd->cmdstr," "));
+      if(execl(ncmd,ncmd,strtok(NULL," "),strtok(NULL," "),strtok(NULL," "),strtok(NULL," ")) <0){
+        fprintf(stderr, "\nError. ERROR # %d\n", errno);
+
+      }
+
+    }else{
+      strtok(cmd->cmdstr," ");
+      char* arg[4] = {strtok(NULL," "),strtok(NULL," "),strtok(NULL," "),strtok(NULL," ")};
+      strcpy(ncmd,strtok(pPath,":"));//copy first part of path to newcmd
+      pathNum = 1;
+      
+      bool executed = false;
+      while((strncmp(ncmd,"\0",1) != 0) && (executed == false)){ //while the path is not null, and not executed
+        strcat(ncmd,"/");//add "/" between path and command.
+        strcat(ncmd,cmd->cmdstr); //cat on the cmd str
+
+        if (execl(ncmd,ncmd,arg[0],arg[1],arg[2],arg[3]) < 0){//try the next one //if failed:
+          char *tmp = NULL;
+          for(int i = 0; i<pathNum; i++){
+            tmp = strtok(NULL,":");//go to the next part of the path.
+          }
+          pathNum++;
+
+          if (tmp != NULL){//if not found a null termenator?
+            strcpy(ncmd,tmp);//copy new str to ncmd
+          }else{
+            ncmd[0] = '\0';//else set ncmd first char to null
+          }         
+        } else{
+          executed = true;
+        }
+      }
+      if (executed == false){
+        puts("Failed to find command.");
+
+      }
+    }
+  if(fdread != -1){//close read and write, if applicable.
+      close(fdread);
+    }
+    if(fdwrite != -1){
+      close(fdwrite);
+    }
+  exit(0);
+
+  }else{//if child's parent
+    cmd->pid = pid_1;
+    close(fdwrite);
+    if ((waitpid(pid_1, &status, 0)) == -1) {
+      if(errno != 10){
+        fprintf(stderr, "Process %s encountered an error. ERROR %d\n", cmd->cmdstr,errno);
+      }
+    } 
+  }
+}
+
 void genCmd(command_t* cmd,int fdread,int fdwrite){
   int status;
   pid_t pid_1;
   int fdtopid1[2];//writing end is 1, reading end is 0 
-  //int fdfrpid1[2];
-  bool pipecmd;
+  bool pipecmd = false;
   char* firstcmd;
   char* secondcmd;
-  firstcmd = strtok(cmd->cmdstr, "|");
-  if(strcmp(firstcmd,cmd->cmdstr)){//there is a second part.
+  char tmpCmd[1024];
+  memset(tmpCmd, 0, 1024);
+  strcpy(tmpCmd, cmd->cmdstr);
+
+  firstcmd = strtok(tmpCmd, "|");
+  if(strcmp(firstcmd,cmd->cmdstr) != 0){//there is a second part.
+    pipecmd = true;
     secondcmd = strtok(NULL, "");//get the rest.
     if(strncmp((strchr(firstcmd,'\0')-1)," ",1)){
       firstcmd[strlen(firstcmd)] = '\0';//get rid of the space
@@ -228,38 +310,51 @@ void genCmd(command_t* cmd,int fdread,int fdwrite){
     if(!strncmp(secondcmd," ",1)){
       secondcmd++;//move ahead the second command
     }
+    
   }
 
-  //pipe(fdfrpid1);
-
   pid_1 = fork();
+
   if (pid_1 == 0) { //if child
-    if(fdread != -1){
-      dup2(fdread,STDIN_FILENO);
-    }
-    if(fdwrite != -1){
+
+    if(pipecmd == false){//if pipeing
+      if(fdread != -1){
+        dup2(fdread,STDIN_FILENO);
+      }
+      if(fdwrite != -1){
+        dup2(fdwrite,STDOUT_FILENO);
+      }
+
+    }else{
+      pipe(fdtopid1);
+      command_t fstcmd;//first command first.
+      strcpy(fstcmd.cmdstr,firstcmd);
+      fstcmd.cmdlen = strlen(firstcmd);
+      fstcmd.pid = 0;
+      fstcmd.background = false;
+      dup2(fdtopid1[0],STDIN_FILENO);//setup return pipe to second process,
+
+      if(fdwrite != -1){
       dup2(fdwrite,STDOUT_FILENO);
+      }
+      strcpy(cmd->cmdstr,secondcmd);
+
+      genCmdSimple(&fstcmd,fdread,fdtopid1[1]);
     }
-    //close(fdtopid1[1]);//close up unused write
-    //dup2(fdtopid1[0],STDIN_FILENO);
 
     int pathNum;// number in the path
-    //puts(cmd.cmdstr); // Echo the input string //maybe execute the command.
     char ncmd[1024];
     memset(ncmd,0,1024);
     
     if (!strncmp(cmd->cmdstr, "/",1)){
-      //puts("/ detected using HOME");
       strcpy(ncmd,hHome);
       strcat(ncmd,strtok(cmd->cmdstr," "));
-      //puts(ncmd);//newcmd now contains the directory in command.
       if(execl(ncmd,ncmd,strtok(NULL," "),strtok(NULL," "),strtok(NULL," "),strtok(NULL," ")) <0){
         fprintf(stderr, "\nError. ERROR # %d\n", errno);
 
       }
 
     }else{
-      //puts("/ not detected, using PATH");
       strtok(cmd->cmdstr," ");
       char* arg[4] = {strtok(NULL," "),strtok(NULL," "),strtok(NULL," "),strtok(NULL," ")};
       strcpy(ncmd,strtok(pPath,":"));//copy first part of path to newcmd
@@ -297,29 +392,18 @@ void genCmd(command_t* cmd,int fdread,int fdwrite){
     if(fdwrite != -1){
       close(fdwrite);
     }
-  //close(fdtopid1[0]);
+
   exit(0);
 
   }else{// else parent
-    //close(fdtopid1[0]);//close up unused read
+
     cmd->pid = pid_1;
-    //int tempdup;
-    //tempdup = dup(STDIN_FILENO);//save stdin?
-    //dup2(fdtopid1[1],STDIN_FILENO);
+
     if(cmd->background == false){
-      //puts("hi!");
-      //while(waitpid(pid_1, &status, WNOHANG) >= 0){//wile true, pipe stdin to shild.
-      //  char ch;
-      //  if (read(STDIN_FILENO, &ch, 1) > 0){
-      //    write(fdtopid1[1],&ch,1);
-      //  }
-      //}
-      //close(fdtopid1[1]);
 
       if ((waitpid(pid_1, &status, 0)) == -1) {
         if(errno != 10){
           fprintf(stderr, "Process %s encountered an error. ERROR %d\n", cmd->cmdstr,errno);
-          //return EXIT_FAILURE;
         }
       } 
 
@@ -331,23 +415,7 @@ void genCmd(command_t* cmd,int fdread,int fdwrite){
           break;
         }
       }     
-      //save to array of tasks, at int i; 
-      //char tmpCmd[1024];
-      //memset(tmpCmd, 0, 1024);
-      //strcpy(tmpCmd, cmd.cmdstr);
-      //char *tok;
-      //tok = strtok(tmpCmd, " ");
-
     }
-    
-
-
-
-    //close(fdtopid1[1]);
-    //dup2(tempdup,STDIN_FILENO);//replace stdin.
-
-
-
   }
 }
 
@@ -371,11 +439,9 @@ bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and 
     perror ("The following error occurred");
     }
     if(feof(in)){
-    //  printf("EOF");
     return false;
     }
     return true;
-    //}
   }
 }
 
@@ -401,7 +467,6 @@ int main(int argc, char** argv) {
   sigfillset(&mask_set);//prevent other interupts from interupting intrupts
   sa.sa_mask = mask_set;
   sa.sa_handler = catch_sigchld;
-  //sa.sa_flags = SA_RESTART;
   sigaction(SIGCHLD,&sa,NULL);
 
   start();
@@ -515,7 +580,6 @@ int main(int argc, char** argv) {
       if(outfileptr != NULL)
         fclose(outfileptr);
     }
-    //puts("hi");
   }
   return EXIT_SUCCESS;
 }
