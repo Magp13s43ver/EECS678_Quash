@@ -10,14 +10,16 @@
 #include "quash.h" // Putting this above the other includes allows us to ensure
                    // this file's header's #include statements are self
                    // contained.
+
+#include <sys/wait.h>
+#include <sys/types.h>
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/wait.h>
-#include <sys/types.h>
+
 
 
 /**************************************************************************
@@ -162,7 +164,19 @@ void genCmd(command_t* cmd,int fdread,int fdwrite){
   pid_t pid_1;
   int fdtopid1[2];//writing end is 1, reading end is 0 
   //int fdfrpid1[2];
-
+  bool pipecmd;
+  char* firstcmd;
+  char* secondcmd;
+  firstcmd = strtok(cmd->cmdstr, "|");
+  if(strcmp(firstcmd,cmd->cmdstr)){//there is a second part.
+    secondcmd = strtok(NULL, "");//get the rest.
+    if(strncmp((strchr(firstcmd,'\0')-1)," ",1)){
+      firstcmd[strlen(firstcmd)] = '\0';//get rid of the space
+    }
+    if(!strncmp(secondcmd," ",1)){
+      secondcmd++;//move ahead the second command
+    }
+  }
 
   //pipe(fdfrpid1);
 
@@ -222,7 +236,14 @@ void genCmd(command_t* cmd,int fdread,int fdwrite){
       }
       if (executed == false){
         puts("Failed to find command.");
+
       }
+    }
+  if(fdread != -1){
+      close(fdread);
+    }
+    if(fdwrite != -1){
+      close(fdwrite);
     }
   //close(fdtopid1[0]);
   exit(0);
@@ -295,8 +316,15 @@ bool get_command(command_t* cmd, FILE* in) { //checks for an input from in, and 
     return true;
   }
   else{
+    if((errno != 0) && (errno != EINTR)){
     perror ("The following error occurred");
+    }
+    if(feof(in)){
+    //  printf("EOF");
     return false;
+    }
+    return true;
+    //}
   }
 }
 
@@ -318,10 +346,11 @@ int main(int argc, char** argv) {
   struct sigaction sa;
   sigset_t mask_set;  /* used to set a signal masking set. */
   /* setup mask_set */
-  sigemptyset(&mask_set);
-  //sigfillset(&mask_set);//prevent other interupts from interupting intrupts
+  //sigemptyset(&mask_set);
+  sigfillset(&mask_set);//prevent other interupts from interupting intrupts
   sa.sa_mask = mask_set;
   sa.sa_handler = catch_sigchld;
+  //sa.sa_flags = SA_RESTART;
   sigaction(SIGCHLD,&sa,NULL);
 
   start();
@@ -393,7 +422,12 @@ int main(int argc, char** argv) {
           tmp++;
         strtok(tmp, " ");//find next space or end of string. and put \0
         infileptr = fopen(tmp,"r");
-        infiledsc = fileno(infileptr);
+        if(infileptr != NULL){
+          infiledsc = fileno(infileptr);
+        }else{
+          perror ("The following error occurred");
+          continue;
+        }
       }
       strcpy(tmpCmd, cmd.cmdstr);
       if(strchr(tmpCmd,'>') != NULL){

@@ -2,9 +2,7 @@ STUDENTID = XXXXXXX
 PROGNAME = quash
 
 CC = gcc --std=c99
-CFLAGS = -Wall -g -Og -D_POSIX_C_SOURCE
-
-
+CFLAGS = -Wall -g -Og -D_POSIX_C_SOURCE=200112L
 ####################################################################
 #                           IMPORTANT                              #
 ####################################################################
