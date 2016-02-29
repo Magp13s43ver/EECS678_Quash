@@ -172,7 +172,7 @@ void jobs(){
   }
 
   if(noJob == 0){
-    puts("There is/are no background process[es] running.");
+    puts("There are no background processes running.");
   }
   return;
 }
