@@ -162,10 +162,17 @@ void pwd(){
  * @return none
  */
 void jobs(){
+  int noJob = 0; // Flag to tell if there are background processes running.
+
   for (int n = 0; n < MAX_BACKGROUND_TASKS; n++){
     if(backprocess[n].pid != 0){
       printf("[%u] %u %s\n", n+1, backprocess[n].pid, backprocess[n].cmdstr);
+      noJob = 1;
     }
+  }
+
+  if(noJob == 0){
+    puts("There is/are no background process[es] running.");
   }
   return;
 }
